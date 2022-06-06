@@ -1,0 +1,185 @@
+import requests
+from requests.exceptions import HTTPError
+import json
+
+#######################
+def displayIntro():
+#######################        
+
+    print("Welcome to the Weather Forecaster\n")
+
+#######################
+def chooseZipOrCity():
+#######################
+        
+    zipOrCity = ''
+    
+    while zipOrCity != '1' and zipOrCity != '2' and zipOrCity != '3':
+            
+        print('Enter the number for which you would like a weather forecast?\n')
+        print('1 - Zip Code')
+        print('2 - City')
+        print('3 - Exit Program\n')
+        
+        zipOrCity = input()
+
+    return zipOrCity
+
+######################
+def requestZipCode():
+######################
+        
+    zipCode = ''
+
+    #Must enter a 5 digit whole number as the zip code
+    
+    while True:
+            
+        try:
+            zipCode = int(input("Enter a 5 digit zip code (only accepts US zip codes): "))
+            if len(str(zipCode)) == 5:
+               break
+            else:
+               print('Zip code must be 5 digits')
+        except ValueError:    
+            print("You may only enter a whole number")
+
+    return str(zipCode) + ', US'
+
+###################
+def requestCity():
+###################
+        
+    cityVal = None
+
+    #City entered must have a value.
+    
+    while not cityVal:
+
+        cityVal = input("Enter a city name.\nFor more accurate results, enter city name, 2-character country code.\nFor example, Pasadena, US: ")
+        
+    return cityVal
+
+################################
+def getWeatherData(pVal,pType):
+################################        
+
+    url = "https://api.openweathermap.org/data/2.5/weather?appid=f69370f0e2a3ebbe525ecf79a63dea47&q="+str(pVal)
+
+    try:
+
+        response = requests.get(url)
+        response.raise_for_status()
+        jsonResponse = response.json()
+        
+        #print("Entire JSON response")
+        #print(jsonResponse)
+        #print("Print each key-value pair from JSON response")
+        #for key, value in jsonResponse.items():
+            #print(key, ":", value)
+        #print("Skies are: ")
+        #print(jsonResponse["weather"][0].items())
+
+        if jsonResponse["cod"] == 200:
+
+           # store the value corresponding
+           # to the "name" key of v
+           location_name = jsonResponse["name"]
+
+           # store the value of "main"
+           # key in variable y
+           y = jsonResponse["main"]
+
+           # store the value corresponding
+           # to the "temp" key of y
+           current_temperature = y["temp"]
+
+           # store the value corresponding
+           # to the "feels_like" key of y
+           feels_like_temperature = y["feels_like"]
+
+           # store the value corresponding
+           # to the "temp_min" key of y
+           min_temperature = y["temp_min"]
+
+           # store the value corresponding
+           # to the "temp_max" key of y
+           max_temperature = y["temp_max"]
+           
+           # store the value corresponding
+           # to the "pressure" key of y
+           current_pressure = y["pressure"]
+ 
+           # store the value corresponding
+           # to the "humidity" key of y
+           current_humidity = y["humidity"]
+ 
+           # store the value of "weather"
+           # key in variable z
+           z = jsonResponse["weather"]
+ 
+           # store the value corresponding
+           # to the "description" key at
+           # the 0th index of z
+           weather_description = z[0]["description"]
+
+           # convert kelvin temperature to fahrenheit
+
+           fTemp      = (current_temperature - 273.15) * 1.8 + 32
+           fFeelsLike = (feels_like_temperature - 273.15) * 1.8 + 32
+           fMin       = (min_temperature - 273.15) * 1.8 + 32
+           fMax       = (max_temperature - 273.15) * 1.8 + 32           
+           
+           # print following values
+           
+           print("\nWeather information for " + location_name +
+                 "\nTemperature (fahrenheit) = " +
+                    str(round(fTemp,2)) +
+                    "\nFeels like (fahrenheit) = " +
+                    str(round(fFeelsLike,2)) +
+                    "\nHigh (fahrenheit) = " +
+                    str(round(fMax,2)) +
+                    "\nLow (fahrenheit) = " +
+                    str(round(fMin,2)) +
+                    "\nAtmospheric pressure (in hPa unit) = " +
+                    str(current_pressure) +
+                    "\nHumidity (in percentage) = " +
+                    str(current_humidity) +
+                    "\nDescription = " +
+                    str(weather_description) + "\n")
+
+    except HTTPError as http_err:
+        if str(http_err)[0:3] == '404':
+           if pType == 'city':
+              print('\nCity not found\n')
+           else:
+              print('\nZip code not found\n')
+        else:
+           print(f'HTTP error occurred: {http_err}')
+    except Exception as err:
+        print(f'Other error occurred: {err}')
+
+############    
+def main():
+############        
+
+    cityVal   = ''
+    zipCode   = ''
+    
+    displayIntro()
+
+    zipOrCity = '0'
+
+    while zipOrCity != '3':
+        zipOrCity = chooseZipOrCity()
+        if zipOrCity == '1':
+           zipCode = requestZipCode()
+           getWeatherData(zipCode,'zip')
+        else:
+           if zipOrCity == '2':
+              cityVal = requestCity()
+              getWeatherData(cityVal.replace(" ","%20"),"city")
+           else:
+              print('Exited program')
+
+main()
